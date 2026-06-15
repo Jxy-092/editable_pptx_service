@@ -1,5 +1,7 @@
 # editable_pptx_service
 
+该服务由https://github.com/Anionex/banana-slides 可自由编辑的pptx导出改造
+
 启动：
 
 ```bash
