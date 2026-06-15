@@ -13,6 +13,7 @@ from PIL import Image
 from config import ExportConfig
 from services.export_service import ExportError, ExportService
 from utils.oss_utils import upload_bytes_to_oss
+from models import db, Task
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +95,6 @@ def export_editable_pptx_with_recursive_analysis_task(
         import os
         from datetime import datetime
         from PIL import Image
-        from models import Project
         from services.export_service import ExportService, ExportError
 
         logger.info(f"开始递归分析导出任务 {task_id} for project {project_id}")
