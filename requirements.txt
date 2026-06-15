@@ -1,11 +1,53 @@
+# Web 框架：提供 HTTP API 服务能力
 Flask>=3.0.0
-Pillow>=10.0.0
-python-pptx>=0.6.23
-requests>=2.31.0
-oss2>=2.18.0
+
+# 跨域支持：app.py 中 from flask_cors import CORS 用到
+Flask-Cors>=4.0.0
+
+# Flask ORM 扩展：集成 SQLAlchemy，用于任务、项目等数据库模型操作
 Flask-SQLAlchemy>=3.1.1
+
+# 数据库 ORM：提供模型定义、查询、事务提交、SQLAlchemy event/Engine/SQLAlchemyError 等能力
 SQLAlchemy>=2.0.0
+
+# 数据库迁移工具：基于 Alembic，用于执行 flask db migrate / upgrade
+Flask-Migrate
+
+# 图片处理库：读取、裁剪、保存、转换图片
+Pillow>=10.0.0
+
+# PPTX 生成库：创建和编辑 PowerPoint 文件
+python-pptx>=0.6.23
+
+# HTTP 请求库：下载图片、调用外部 API
+requests>=2.31.0
+
+# 阿里云 OSS SDK：上传导出的 PPTX 文件或其它对象到 OSS
+oss2>=2.18.0
+
+# 图片转 PDF 工具：用于图片/PDF 转换相关场景
 img2pdf>=0.5.1
+
+# PDF 处理库：读取、渲染、解析 PDF 内容
 PyMuPDF>=1.24.0
+
+# 数值计算库：图像处理、坐标计算、矩阵操作依赖
 numpy
+
+# OpenCV 图像处理库：用于图像修复、mask、轮廓、区域处理等
 opencv-python
+
+# 重试工具：用于外部模型/API 调用失败后的自动重试
+tenacity
+
+# Google GenAI SDK：调用 Gemini 文本、图片、caption 等模型
+google-genai
+
+# .env 配置加载工具：app.py/config.py 中 from dotenv import load_dotenv 用到
+python-dotenv
+
+# OpenAI SDK：OpenAITextProvider / OpenAIImageProvider / CodexTextProvider 导入时需要
+openai
+
+# Anthropic SDK：AnthropicTextProvider 导入时需要
+anthropic

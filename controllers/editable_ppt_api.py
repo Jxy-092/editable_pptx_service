@@ -7,7 +7,6 @@ from typing import Any, Dict
 
 from flask import Blueprint, current_app, request
 
-from config import ExportConfig
 from models import db, Task
 from utils.oss_utils import download_file
 from utils import (
@@ -16,40 +15,6 @@ from utils import (
 
 logger = logging.getLogger(__name__)
 editable_ppt_bp = Blueprint("editable_ppt_api", __name__)
-
-
-def _get_config_value(data: Dict[str, Any], snake: str, camel: str = None, default=None):
-    camel = camel or snake
-    if snake in data:
-        return data.get(snake)
-    if camel in data:
-        return data.get(camel)
-    return default
-
-
-def _build_export_config(data: Dict[str, Any]) -> ExportConfig:
-    extra_config = data.get("extraConfig") or data.get("extra_config") or {}
-    return ExportConfig(
-        api_key=_get_config_value(data, "api_key", "apiKey"),
-        api_base=_get_config_value(data, "api_base", "apiBase"),
-        provider_format=_get_config_value(data, "provider_format", "providerFormat", "gemini"),
-        text_model=_get_config_value(data, "text_model", "textModel"),
-        image_model=_get_config_value(data, "image_model", "imageModel"),
-        image_caption_model=_get_config_value(data, "image_caption_model", "imageCaptionModel"),
-        image_caption_model_source=_get_config_value(data, "image_caption_model_source", "imageCaptionModelSource"),
-        mineru_token=_get_config_value(data, "mineru_token", "mineruToken"),
-        mineru_api_base=_get_config_value(data, "mineru_api_base", "mineruApiBase"),
-        baidu_api_key=_get_config_value(data, "baidu_api_key", "baiduApiKey"),
-        max_depth=int(_get_config_value(data, "max_depth", "maxDepth", 2)),
-        max_workers=int(_get_config_value(data, "max_workers", "maxWorkers", 4)),
-        export_extractor_method=_get_config_value(data, "export_extractor_method", "exportExtractorMethod", "hybrid"),
-        export_inpaint_method=_get_config_value(data, "export_inpaint_method", "exportInpaintMethod", "hybrid"),
-        enable_icon_subject_extraction=bool(_get_config_value(data, "enable_icon_subject_extraction", "enableIconSubjectExtraction", True)),
-        export_allow_partial=bool(_get_config_value(data, "export_allow_partial", "exportAllowPartial", False)),
-        source_backend_path=_get_config_value(data, "source_backend_path", "sourceBackendPath", current_app.config.get("SOURCE_BACKEND_PATH")),
-        extra_config=extra_config,
-    )
-
 
 def _apply_oss_config(data: Dict[str, Any]):
     oss = data.get("oss") or {}

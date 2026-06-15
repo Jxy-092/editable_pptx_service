@@ -10,12 +10,57 @@ from typing import Callable, List, Optional
 
 from PIL import Image
 
-from config import ExportConfig
+from contextlib import contextmanager
 from services.export_service import ExportError, ExportService
 from utils.oss_utils import upload_bytes_to_oss
 from models import db, Task
 
 logger = logging.getLogger(__name__)
+
+class ResourceLimiter:
+    """Thread-safe concurrency limiter for a shared external resource."""
+
+    def __init__(self, name: str, capacity: int):
+        self.name = name
+        self.capacity = max(1, int(capacity))
+        self._in_use = 0
+        self._condition = threading.Condition()
+
+    def update_capacity(self, capacity: int):
+        new_capacity = max(1, int(capacity))
+        with self._condition:
+            if new_capacity == self.capacity:
+                return
+            logger.info(f"Updating {self.name} limiter: {self.capacity} -> {new_capacity}")
+            self.capacity = new_capacity
+            self._condition.notify_all()
+
+    @contextmanager
+    def slot(self, label: str, on_acquire: Optional[Callable[[], None]] = None):
+        waited = False
+        with self._condition:
+            while self._in_use >= self.capacity:
+                if not waited:
+                    waited = True
+                    logger.info(
+                        f"{self.name} limiter full ({self._in_use}/{self.capacity}), "
+                        f"waiting: {label}"
+                    )
+                self._condition.wait(timeout=0.5)
+
+            self._in_use += 1
+
+        if waited:
+            logger.info(f"{self.name} limiter slot acquired: {label}")
+
+        try:
+            if on_acquire:
+                on_acquire()
+            yield
+        finally:
+            with self._condition:
+                self._in_use -= 1
+                self._condition.notify()
 
 
 class TaskManager:
@@ -45,9 +90,41 @@ class TaskManager:
         with self.lock:
             return task_id in self.active_tasks
 
+    def update_max_workers(self, max_workers: int):
+        """Replace the shared executor so new tasks use a higher/lower ceiling."""
+        new_max_workers = max(1, int(max_workers))
+        old_executor = None
 
-task_manager = TaskManager(max_workers=int(os.getenv("MAX_BACKGROUND_TASK_WORKERS", "8")))
+        with self.lock:
+            if new_max_workers == self.max_workers:
+                return
 
+            logger.info(f"Updating background task pool size: {self.max_workers} -> {new_max_workers}")
+            old_executor = self.executor
+            self.executor = ThreadPoolExecutor(max_workers=new_max_workers)
+            self.max_workers = new_max_workers
+
+        if old_executor is not None:
+            old_executor.shutdown(wait=False, cancel_futures=False)
+
+def _compute_background_worker_target(description_workers: int, image_workers: int) -> int:
+    """Keep the shared task pool from becoming the product-level bottleneck."""
+    return max(8, int(description_workers) + int(image_workers) + 4)
+
+
+# Global task manager and resource limiters
+task_manager = TaskManager(max_workers=max(8, int(os.getenv('MAX_BACKGROUND_TASK_WORKERS', '16'))))
+image_resource_limiter = ResourceLimiter("image", int(os.getenv('MAX_IMAGE_WORKERS', '20')))
+text_resource_limiter = ResourceLimiter("text", int(os.getenv('MAX_DESCRIPTION_WORKERS', '20')))
+
+
+def sync_resource_limits(description_workers: int, image_workers: int):
+    """Apply the latest runtime settings to shared concurrency controls."""
+    task_manager.update_max_workers(
+        _compute_background_worker_target(description_workers, image_workers)
+    )
+    image_resource_limiter.update_capacity(image_workers)
+    text_resource_limiter.update_capacity(description_workers)
 
 def export_editable_pptx_with_recursive_analysis_task(
         task_id: str,
@@ -199,22 +276,22 @@ def export_editable_pptx_with_recursive_analysis_task(
             logger.info(f"Step 3: 创建可编辑PPTX (extractor={export_extractor_method}, inpaint={export_inpaint_method}, fail_fast={fail_fast})...")
             progress_callback("配置", f"提取方法: {export_extractor_method}, 背景修复: {export_inpaint_method}", 6)
 
-            # _, export_warnings = ExportService.create_editable_pptx_with_recursive_analysis(
-            #     image_paths=image_paths,
-            #     output_file=output_path,
-            #     slide_width_pixels=slide_width,
-            #     slide_height_pixels=slide_height,
-            #     max_depth=max_depth,
-            #     max_workers=max_workers,
-            #     text_attribute_extractor=text_attribute_extractor,
-            #     progress_callback=progress_callback,
-            #     export_extractor_method=export_extractor_method,
-            #     export_inpaint_method=export_inpaint_method,
-            #     enable_icon_subject_extraction=enable_icon_subject_extraction,
-            #     fail_fast=fail_fast
-            # )
+            _, export_warnings = ExportService.create_editable_pptx_with_recursive_analysis(
+                image_paths=image_paths,
+                output_file=output_path,
+                slide_width_pixels=slide_width,
+                slide_height_pixels=slide_height,
+                max_depth=max_depth,
+                max_workers=max_workers,
+                text_attribute_extractor=text_attribute_extractor,
+                progress_callback=progress_callback,
+                export_extractor_method=export_extractor_method,
+                export_inpaint_method=export_inpaint_method,
+                enable_icon_subject_extraction=enable_icon_subject_extraction,
+                fail_fast=fail_fast
+            )
 
-            # logger.info(f"✓ 可编辑PPTX已创建: {output_path}")
+            logger.info(f"✓ 可编辑PPTX已创建: {output_path}")
 
             # Step 4: 标记任务完成
             # download_path = f"/files/{project_id}/exports/{filename}"
