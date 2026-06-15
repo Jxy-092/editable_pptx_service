@@ -16,6 +16,8 @@ from config import (
     OSS_BASE_PATH,
     OSS_UPLOAD_PATH,
 )
+from models import db
+from models.task import Task
 from controllers.editable_ppt_api import editable_ppt_bp
 
 
@@ -24,7 +26,18 @@ def create_app():
         level=os.getenv("LOG_LEVEL", "INFO"),
         format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
     )
+
     app = Flask(__name__)
+
+    data_folder = Path(os.getenv("DATA_FOLDER", str(Path(app.root_path) / "data")))
+    data_folder.mkdir(parents=True, exist_ok=True)
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+        "SQLALCHEMY_DATABASE_URI",
+        f"sqlite:///{data_folder / 'editable_pptx_service.db'}",
+    )
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
     app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
     app.config["OUTPUT_FOLDER"] = OUTPUT_FOLDER
     app.config["TMP_FOLDER"] = TMP_FOLDER
@@ -35,8 +48,15 @@ def create_app():
     app.config["OSS_BUCKET_NAME"] = OSS_BUCKET_NAME
     app.config["OSS_BASE_PATH"] = OSS_BASE_PATH
     app.config["OSS_UPLOAD_PATH"] = OSS_UPLOAD_PATH
-    for path in (UPLOAD_FOLDER, OUTPUT_FOLDER, TMP_FOLDER):
+
+    for path in (UPLOAD_FOLDER, OUTPUT_FOLDER, TMP_FOLDER, data_folder):
         Path(path).mkdir(parents=True, exist_ok=True)
+
+    db.init_app(app)
+
+    with app.app_context():
+        db.create_all()
+
     app.register_blueprint(editable_ppt_bp)
 
     @app.get("/health")

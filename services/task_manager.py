@@ -11,7 +11,6 @@ from typing import Callable, List, Optional
 from PIL import Image
 
 from config import ExportConfig
-from models import TASK_STORE
 from services.export_service import ExportError, ExportService
 from utils.oss_utils import upload_bytes_to_oss
 
@@ -44,17 +43,6 @@ class TaskManager:
     def is_task_active(self, task_id: str) -> bool:
         with self.lock:
             return task_id in self.active_tasks
-
-
-class FileService:
-    def __init__(self, base_dir: str):
-        self.base_dir = Path(base_dir)
-
-    def get_absolute_path(self, path: str) -> str:
-        raw = Path(path)
-        if raw.is_absolute():
-            return str(raw)
-        return str((self.base_dir / raw).resolve())
 
 
 task_manager = TaskManager(max_workers=int(os.getenv("MAX_BACKGROUND_TASK_WORKERS", "8")))
@@ -211,28 +199,28 @@ def export_editable_pptx_with_recursive_analysis_task(
             logger.info(f"Step 3: 创建可编辑PPTX (extractor={export_extractor_method}, inpaint={export_inpaint_method}, fail_fast={fail_fast})...")
             progress_callback("配置", f"提取方法: {export_extractor_method}, 背景修复: {export_inpaint_method}", 6)
 
-            _, export_warnings = ExportService.create_editable_pptx_with_recursive_analysis(
-                image_paths=image_paths,
-                output_file=output_path,
-                slide_width_pixels=slide_width,
-                slide_height_pixels=slide_height,
-                max_depth=max_depth,
-                max_workers=max_workers,
-                text_attribute_extractor=text_attribute_extractor,
-                progress_callback=progress_callback,
-                export_extractor_method=export_extractor_method,
-                export_inpaint_method=export_inpaint_method,
-                enable_icon_subject_extraction=enable_icon_subject_extraction,
-                fail_fast=fail_fast
-            )
+            # _, export_warnings = ExportService.create_editable_pptx_with_recursive_analysis(
+            #     image_paths=image_paths,
+            #     output_file=output_path,
+            #     slide_width_pixels=slide_width,
+            #     slide_height_pixels=slide_height,
+            #     max_depth=max_depth,
+            #     max_workers=max_workers,
+            #     text_attribute_extractor=text_attribute_extractor,
+            #     progress_callback=progress_callback,
+            #     export_extractor_method=export_extractor_method,
+            #     export_inpaint_method=export_inpaint_method,
+            #     enable_icon_subject_extraction=enable_icon_subject_extraction,
+            #     fail_fast=fail_fast
+            # )
 
-            logger.info(f"✓ 可编辑PPTX已创建: {output_path}")
+            # logger.info(f"✓ 可编辑PPTX已创建: {output_path}")
 
             # Step 4: 标记任务完成
-            download_path = f"/files/{project_id}/exports/{filename}"
+            # download_path = f"/files/{project_id}/exports/{filename}"
 
             # 添加完成消息
-            progress_messages.append("✅ 导出完成！")
+            # progress_messages.append("✅ 导出完成！")
 
             # 添加警告信息（如果有）
             warning_messages = []

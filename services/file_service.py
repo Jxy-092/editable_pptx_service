@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Optional
 from werkzeug.utils import secure_filename
 from PIL import Image
-from models import Project
 from models import db
 
 
@@ -397,42 +396,7 @@ class FileService:
         """Check if file exists"""
         filepath = self.upload_folder / relative_path.replace('\\', '/')
         return filepath.exists() and filepath.is_file()
-    
-    def get_template_path(self, project_id: str) -> Optional[str]:
-        """
-        Get template file path for project
-        
-        Args:
-            project_id: Project ID
-        
-        Returns:
-            Absolute path to template file or None
-        """
-        
-        # 刷新数据库会话，确保获取最新数据
-        db.session.expire_all()
-        project = Project.query.get(project_id)
-        if project and project.template_image_path:
-            # template_image_path 是相对路径，需要转换为绝对路径
-            template_path = self.upload_folder / project.template_image_path
-            if template_path.exists() and template_path.is_file():
-                return str(template_path)
-        
-        # 如果数据库中没有，回退到目录查找（兼容旧数据）
-        template_dir = self._get_template_dir(project_id)
-        if template_dir.exists():
-            # 按修改时间排序，返回最新的模板文件
-            template_files = [
-                f for f in template_dir.iterdir() 
-                if f.is_file() and f.stem == 'template'
-            ]
-            if template_files:
-                # 返回修改时间最新的文件
-                latest_file = max(template_files, key=lambda f: f.stat().st_mtime)
-                return str(latest_file)
-        
-        return None
-    
+
     def _get_user_templates_dir(self) -> Path:
         """Get user templates directory"""
         templates_dir = self.upload_folder / "user-templates"
