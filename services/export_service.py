@@ -1461,17 +1461,8 @@ class ExportService:
         report_progress("保存文件", "正在保存PPTX文件...", 95)
         if output_file:
             builder.save(output_file)
+            pptx_bytes = builder.save_to_bytes()
             report_progress("完成", f"✓ 可编辑PPTX已保存", 100)
-            logger.info(f"✓ 可编辑PPTX已保存: {output_file}")
-            
-            # 输出警告摘要
-            if warnings.has_warnings():
-                logger.warning(f"导出完成，但有 {len(warnings.to_summary())} 条警告")
-            
-            return None, warnings
-        else:
-            pptx_bytes = builder.to_bytes()
-            report_progress("完成", f"✓ 可编辑PPTX已生成", 100)
             logger.info(f"✓ 可编辑PPTX已生成（{len(pptx_bytes)} 字节）")
             
             # 输出警告摘要

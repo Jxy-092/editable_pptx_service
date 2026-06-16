@@ -665,6 +665,26 @@ class PPTXBuilder:
         
         self.prs.save(output_path)
         logger.info(f"Saved presentation to: {output_path}")
+
+    def save_to_bytes(self) -> bytes:
+        """
+        Save presentation to bytes (in-memory)
+        Returns:
+            bytes: PPTX file content as bytes
+        """
+
+        if not self.prs:
+            raise ValueError("No presentation to save")
+
+        from io import BytesIO
+        buffer = BytesIO()
+        self.prs.save(buffer)
+        buffer.seek(0)
+        pptx_bytes = buffer.read()
+        buffer.close()
+
+        logger.info(f"Saved presentation to memory: {len(pptx_bytes)} bytes")
+        return pptx_bytes
     
     def get_presentation(self) -> Presentation:
         """Get the current presentation object"""

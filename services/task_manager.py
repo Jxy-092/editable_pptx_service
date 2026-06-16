@@ -276,7 +276,7 @@ def export_editable_pptx_with_recursive_analysis_task(
             logger.info(f"Step 3: 创建可编辑PPTX (extractor={export_extractor_method}, inpaint={export_inpaint_method}, fail_fast={fail_fast})...")
             progress_callback("配置", f"提取方法: {export_extractor_method}, 背景修复: {export_inpaint_method}", 6)
 
-            _, export_warnings = ExportService.create_editable_pptx_with_recursive_analysis(
+            pptx_bytes, export_warnings = ExportService.create_editable_pptx_with_recursive_analysis(
                 image_paths=image_paths,
                 output_file=output_path,
                 slide_width_pixels=slide_width,
@@ -293,8 +293,13 @@ def export_editable_pptx_with_recursive_analysis_task(
 
             logger.info(f"✓ 可编辑PPTX已创建: {output_path}")
 
-            # Step 4: 标记任务完成
-            download_path = f"/files/{project_id}/exports/{filename}"
+            # Step 4: 标记任务完成 并将导出的PPTX上传至OSS
+            download_path = upload_bytes_to_oss(
+                file_bytes=pptx_bytes,
+                object_key=filename  # 使用文件名作为对象键
+            )
+
+            logger.info(f"✓ 可编辑PPTX已上传到OSS: {download_path}")
 
             # 添加完成消息
             progress_messages.append("✅ 导出完成！")
