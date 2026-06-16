@@ -69,3 +69,20 @@ uv pip install -r requirements.txt
 
 ### 4.启动服务
 uv run python app.py
+
+
+
+### Postman  测试JSON
+/api/export/editable-pptx 导出接口
+{
+  "projectId": "{{projectId}}",
+  "imagePaths": [
+    "{{imageUrl}}"
+  ],
+  "filename": "XXX.pptx",
+  "maxDepth": 1,
+  "maxWorkers": 4,
+  "exportExtractorMethod": "hybrid/mineru",
+  "exportInpaintMethod": "hybrid/baidu"
+}
+/api/tasks/{{taskId}} 查询进度接口
