@@ -140,8 +140,8 @@ def export_editable_pptx():
         app = current_app._get_current_object()
 
         # 读取项目的导出设置
-        export_extractor_method = data.get("export_extractor_method") or data.get("exportExtractorMethod") or "hybrid"
-        export_inpaint_method = data.get("export_inpaint_method") or data.get("exportInpaintMethod") or "hybrid"
+        export_extractor_method = data.get("extractor_method") or data.get("extractorMethod") or "hybrid"
+        export_inpaint_method = data.get("inpaint_method") or data.get("inpaintMethod") or "hybrid"
         enable_icon_subject_extraction = False
 
         logger.info(
