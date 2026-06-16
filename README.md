@@ -62,7 +62,8 @@ Windows PowerShell：
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 
 ### 2.创建 .venv 虚拟环境
-uv venv --python 3.11
+uv venv
+uv python install 3.13
 
 ### 3.安装依赖
 uv pip install -r requirements.txt
