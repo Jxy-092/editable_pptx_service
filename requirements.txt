@@ -51,3 +51,7 @@ openai
 
 # Anthropic SDK：AnthropicTextProvider 导入时需要
 anthropic
+
+fastapi[standard]
+
+markitdown[all]

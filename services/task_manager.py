@@ -294,10 +294,10 @@ def export_editable_pptx_with_recursive_analysis_task(
             logger.info(f"✓ 可编辑PPTX已创建: {output_path}")
 
             # Step 4: 标记任务完成
-            # download_path = f"/files/{project_id}/exports/{filename}"
+            download_path = f"/files/{project_id}/exports/{filename}"
 
             # 添加完成消息
-            # progress_messages.append("✅ 导出完成！")
+            progress_messages.append("✅ 导出完成！")
 
             # 添加警告信息（如果有）
             warning_messages = []

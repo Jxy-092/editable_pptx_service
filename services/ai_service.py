@@ -13,6 +13,7 @@ from textwrap import dedent
 from PIL import Image
 from tenacity import retry, stop_after_attempt, retry_if_exception_type
 from .prompts import (
+    get_image_edit_prompt,
     get_ppt_page_content_extraction_prompt,
     get_layout_caption_prompt,
     get_style_extraction_prompt

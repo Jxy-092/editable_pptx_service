@@ -142,7 +142,7 @@ def export_editable_pptx():
         # 读取项目的导出设置
         export_extractor_method = data.get("export_extractor_method") or data.get("exportExtractorMethod") or "hybrid"
         export_inpaint_method = data.get("export_inpaint_method") or data.get("exportInpaintMethod") or "hybrid"
-        enable_icon_subject_extraction = True
+        enable_icon_subject_extraction = False
 
         logger.info(
             f"Export settings: extractor={export_extractor_method}, "
