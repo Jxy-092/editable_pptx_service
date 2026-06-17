@@ -9,7 +9,7 @@ from typing import Any, Dict
 from flask import Blueprint, current_app, request
 
 from models import db, Task
-from utils.oss_utils import download_file
+from utils.oss_utils import download_file, cleanup_temp_paths
 from utils import (
     error_response, not_found, bad_request, success_response
 )
@@ -127,11 +127,11 @@ def export_editable_pptx():
                     ratio_diff = abs(ratio - aspect_ratio_16_9) / aspect_ratio_16_9
 
                     if ratio_diff > tolerance:
-                        cleanup_temp_paths(cleanup_paths)
+                        cleanup_temp_paths(local_paths)
                         cleanup_paths = []
                         return bad_request('导出失败：图片长宽比必须是16:9')
             except Exception as e:
-                cleanup_temp_paths(cleanup_paths)
+                cleanup_temp_paths(local_paths)
                 cleanup_paths = []
                 return bad_request(f'无法读取图片 {idx + 1}: {str(e)}')
 

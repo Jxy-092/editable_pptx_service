@@ -162,3 +162,30 @@ def upload_bytes_to_oss(
         return oss_url
     else:
         raise Exception(f"OSS上传失败: {result.status}")
+
+def cleanup_temp_paths(paths: List[str]):
+    """
+    清理临时文件或临时目录。
+    """
+    if not paths:
+        return
+
+    # 去重并按路径长度倒序清理，避免先删父目录后子文件报错。
+    unique_paths = sorted(set(str(p) for p in paths if p), key=len, reverse=True)
+
+    for path in unique_paths:
+        try:
+            if not os.path.exists(path):
+                logger.info(f"Temp path already removed or missing: {path}")
+                continue
+
+            if os.path.isdir(path):
+                shutil.rmtree(path, ignore_errors=True)
+                logger.info(f"Cleaned temp directory: {path}")
+            else:
+                os.remove(path)
+                logger.info(f"Cleaned temp file: {path}")
+
+        except Exception as cleanup_error:
+            logger.warning(f"Failed to clean temp path {path}: {cleanup_error}")
+
