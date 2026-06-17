@@ -79,7 +79,7 @@ def export_editable_pptx():
             return bad_request("系统Key 不能为空")
 
         if auth_key != current_app.config.get('AUTH_KEY'):
-            return bad_request("系统KEY 校验失败")
+            return bad_request("当前系统不支持调用")
 
         project_id = data.get("project_id") or data.get("projectId")
         # 转换成字符串
@@ -110,6 +110,30 @@ def export_editable_pptx():
             return bad_request("图片下载失败或本地文件不存在")
 
         local_paths = [local_image_path]
+
+        # 检查图片比例，只支持16:9横版。
+        from PIL import Image
+        aspect_ratio_16_9 = 16 / 9
+        tolerance = 0.02
+
+        for idx, img_path in enumerate(local_paths):
+            try:
+                if not os.path.exists(img_path):
+                    raise FileNotFoundError(f"图片文件不存在: {img_path}")
+
+                with Image.open(img_path) as img:
+                    width, height = img.size
+                    ratio = width / height
+                    ratio_diff = abs(ratio - aspect_ratio_16_9) / aspect_ratio_16_9
+
+                    if ratio_diff > tolerance:
+                        cleanup_temp_paths(cleanup_paths)
+                        cleanup_paths = []
+                        return bad_request('导出失败：图片长宽比必须是16:9')
+            except Exception as e:
+                cleanup_temp_paths(cleanup_paths)
+                cleanup_paths = []
+                return bad_request(f'无法读取图片 {idx + 1}: {str(e)}')
 
         # 如果没有传filename这个字段使用，
         filename = data.get('filename', f'editable_{project_id}.pptx')
