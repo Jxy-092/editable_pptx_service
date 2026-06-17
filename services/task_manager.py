@@ -243,7 +243,7 @@ def export_editable_pptx_with_recursive_analysis_task(
             progress_callback("准备", f"找到 {len(image_paths)} 张幻灯片图片", 2)
 
             # 准备输出路径
-            exports_dir = os.path.join(app.root_path, project_id, 'exports')
+            exports_dir = os.path.join(app.root_path, 'export' , project_id)
             os.makedirs(exports_dir, exist_ok=True)
 
             # Handle filename collision

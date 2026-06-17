@@ -123,6 +123,8 @@ class Config:
     # 可选值: 'zh' (中文), 'ja' (日本語), 'en' (English), 'auto' (自动)
     OUTPUT_LANGUAGE = os.getenv('OUTPUT_LANGUAGE', 'zh')
 
+    AUTH_KEY = os.getenv('AUTH_KEY', '')
+
     # 火山引擎配置
     VOLCENGINE_ACCESS_KEY = os.getenv('VOLCENGINE_ACCESS_KEY', '')
     VOLCENGINE_SECRET_KEY = os.getenv('VOLCENGINE_SECRET_KEY', '')

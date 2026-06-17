@@ -73,7 +73,16 @@ def export_editable_pptx():
         # Get parameters from request body
         data = request.get_json() or {}
 
+        auth_key = data.get("auth_key") or data.get("authKey")
+        if not auth_key:
+            return bad_request("系统Key 不能为空")
+
+        if auth_key != current_app.config.get('AUTH_KEY'):
+            return bad_request("系统KEY 校验失败")
+
         project_id = data.get("project_id") or data.get("projectId")
+        # 转换成字符串
+        project_id = str(project_id).strip()
         if not project_id:
             return bad_request("projectId 不能为空")
 
@@ -103,6 +112,19 @@ def export_editable_pptx():
 
         # 如果没有传filename这个字段使用，
         filename = data.get('filename', f'editable_{project_id}.pptx')
+        # 处理文件名
+        # Windows 文件名禁止字符：< > : " / \ | ? *
+        invalid_chars_pattern = r'[<>:"/\\|?*]'
+        filename = re.sub(invalid_chars_pattern, "", filename)
+
+        # 将换行符、回车符、制表符等控制字符替换为空格
+        filename = re.sub(r"[\r\n\t]+", " ", filename)
+
+        # 删除其它不可见控制字符
+        filename = re.sub(r"[\x00-\x1f]", "", filename)
+
+        # 合并多个连续空白
+        filename = re.sub(r"\s+", " ", filename).strip()
         if not filename.endswith('.pptx'):
             filename += '.pptx'
 
