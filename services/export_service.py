@@ -1400,7 +1400,7 @@ class ExportService:
         # 5. 为每个页面构建幻灯片
         total_pages = len(editable_images)
         for page_idx, editable_img in enumerate(editable_images):
-            # 构建PPTX占 75% - 95% 的进度
+            # 构建PPTX占 75% - 90% 的进度
             percent = 75 + int(20 * page_idx / total_pages)
             report_progress("构建PPTX", f"构建第 {page_idx + 1}/{total_pages} 页...", percent)
             logger.info(f"  构建第 {page_idx + 1}/{total_pages} 页...")
@@ -1458,11 +1458,10 @@ class ExportService:
             logger.info(f"    ✓ 第 {page_idx + 1} 页完成，添加了 {len(editable_img.elements)} 个元素")
         
         # 5. 保存或返回字节流
-        report_progress("保存文件", "正在保存PPTX文件...", 95)
+        report_progress("保存文件", "正在保存PPTX文件...", 90)
         if output_file:
             builder.save(output_file)
             pptx_bytes = builder.save_to_bytes()
-            report_progress("完成", f"✓ 可编辑PPTX已保存", 100)
             logger.info(f"✓ 可编辑PPTX已生成（{len(pptx_bytes)} 字节）")
             
             # 输出警告摘要

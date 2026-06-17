@@ -4,7 +4,7 @@ import logging
 import os
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, List, Optional
 
@@ -15,6 +15,7 @@ from services.export_service import ExportError, ExportService
 from utils.oss_utils import upload_bytes_to_oss
 from models import db, Task
 
+BEIJING_TIMEZONE = ZoneInfo("Asia/Shanghai")
 logger = logging.getLogger(__name__)
 
 class ResourceLimiter:
@@ -253,7 +254,7 @@ def export_editable_pptx_with_recursive_analysis_task(
             output_path = os.path.join(exports_dir, filename)
             if os.path.exists(output_path):
                 base_name = filename.rsplit('.', 1)[0]
-                timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+                timestamp = datetime.now(BEIJING_TIMEZONE).replace(tzinfo=None).strftime('%Y%m%d_%H%M%S')
                 filename = f"{base_name}_{timestamp}.pptx"
                 output_path = os.path.join(exports_dir, filename)
                 logger.info(f"文件名冲突，使用新文件名: {filename}")
@@ -314,7 +315,7 @@ def export_editable_pptx_with_recursive_analysis_task(
             task = Task.query.get(task_id)
             if task:
                 task.status = 'COMPLETED'
-                task.completed_at = datetime.utcnow()
+                task.completed_at = datetime.now(BEIJING_TIMEZONE).replace(tzinfo=None)
                 task.set_progress({
                     "total": 100,
                     "completed": 100,
@@ -348,7 +349,7 @@ def export_editable_pptx_with_recursive_analysis_task(
                 if e.help_text:
                     error_message += f"\n\n💡 {e.help_text}"
                 task.error_message = error_message
-                task.completed_at = datetime.utcnow()
+                task.completed_at = datetime.now(BEIJING_TIMEZONE).replace(tzinfo=None)
                 # 在 progress 中保存详细错误信息
                 task.set_progress({
                     "total": 100,
@@ -372,5 +373,5 @@ def export_editable_pptx_with_recursive_analysis_task(
             if task:
                 task.status = 'FAILED'
                 task.error_message = str(e)
-                task.completed_at = datetime.utcnow()
+                task.completed_at = datetime.now(BEIJING_TIMEZONE).replace(tzinfo=None)
                 db.session.commit()
