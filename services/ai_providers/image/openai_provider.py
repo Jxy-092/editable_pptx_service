@@ -22,6 +22,8 @@ from config import get_config
 
 logger = logging.getLogger(__name__)
 
+# 写死 Azure / 代理图片接口所需的 api-version 查询参数。
+OPENAI_IMAGE_DEFAULT_QUERY = {"api-version": "2025-04-01-preview"}
 
 # Models that use the native OpenAI images API (images.generate / images.edit)
 # rather than the chat completions multimodal path.
@@ -115,6 +117,7 @@ class OpenAIImageProvider(ImageProvider):
         self.client = OpenAI(
             api_key=api_key,
             base_url=api_base,
+            default_query=OPENAI_IMAGE_DEFAULT_QUERY,
             timeout=get_config().OPENAI_TIMEOUT,  # set timeout from config
             max_retries=get_config().OPENAI_MAX_RETRIES  # set max retries from config
         )
@@ -203,7 +206,7 @@ class OpenAIImageProvider(ImageProvider):
             return 'standard'   # dall-e-3 only accepts standard / hd
         if model == 'dall-e-2':
             return None          # dall-e-2 has no quality param
-        return 'auto'            # gpt-image-* accepts auto / low / medium / high
+        return 'medium'            # gpt-image-* accepts auto / low / medium / high
 
     def _decode_image_response(self, item) -> Image.Image:
         """Extract PIL Image from an images API response item (b64_json, url, or raw string)."""
@@ -283,6 +286,7 @@ class OpenAIImageProvider(ImageProvider):
         """Use the native OpenAI images API (gpt-image-* / dall-e-*)."""
         size = self._resolve_size(aspect_ratio, resolution)
         quality = self._resolve_quality()
+        logger.debug("OpenAI quality=%s size=%s", quality, size)
         # GPT image models always return b64_json; DALL-E models default to url
         is_dalle = self.model.lower() in _DALLE_MODELS
         response_format = 'b64_json' if is_dalle else None
@@ -303,6 +307,7 @@ class OpenAIImageProvider(ImageProvider):
                 kwargs['quality'] = quality
             if response_format:
                 kwargs['response_format'] = response_format
+            logger.debug("openAI请求参数：%s", **kwargs)
             result = self.client.images.edit(**kwargs)
         else:
             if ref_images:

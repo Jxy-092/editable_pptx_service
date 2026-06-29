@@ -126,13 +126,13 @@ def export_editable_pptx():
                     ratio = width / height
                     ratio_diff = abs(ratio - aspect_ratio_16_9) / aspect_ratio_16_9
 
-                    if ratio_diff > tolerance:
-                        cleanup_temp_paths(local_paths)
-                        cleanup_paths = []
-                        return bad_request('导出失败：图片长宽比必须是16:9')
+                if ratio_diff > tolerance:
+                    cleanup_temp_paths(local_paths)
+                    local_paths = []
+                    return bad_request('导出失败：图片长宽比必须是16:9')
             except Exception as e:
                 cleanup_temp_paths(local_paths)
-                cleanup_paths = []
+                local_paths = []
                 return bad_request(f'无法读取图片 {idx + 1}: {str(e)}')
 
         # 如果没有传filename这个字段使用，
