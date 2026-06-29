@@ -10,6 +10,7 @@ import random
 import tempfile
 import base64
 import hashlib
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
@@ -1141,7 +1142,9 @@ class ExportService:
         
         # 并发执行全局识别和单个裁剪识别
         logger.info(f"  并发执行: 全局识别 {len(page_text_elements)} 页 + 单个识别 {len(all_text_items)} 个元素...")
-        
+
+        # 记录混合文本样式识别整体耗时：包含全局识别任务和单个裁剪识别任务。
+        style_extract_start_time = time.perf_counter()
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # 提交全局识别任务
             global_futures = {
@@ -1205,7 +1208,8 @@ class ExportService:
                     if fail_fast:
                         raise
                     failed_extractions.append((element_id, str(e)))
-        
+        logger.info("混合文本样式识别整体执行完成，耗时=%.2fs",style_extract_elapsed)
+
         # Step 3: 合并结果
         # 优先使用全局识别的布局属性，使用单个识别的颜色属性
         merged_results = {}

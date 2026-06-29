@@ -454,7 +454,7 @@ class CaptionModelTextAttributeExtractor(TextAttributeExtractor):
         import tempfile
         from services.prompts import get_batch_text_attribute_extraction_prompt
         
-        thinking_budget = kwargs.get('thinking_budget', 1000)
+        thinking_budget = kwargs.get('thinking_budget', 0)
         
         if not text_elements:
             return {}
@@ -486,6 +486,7 @@ class CaptionModelTextAttributeExtractor(TextAttributeExtractor):
             
             # 构建 prompt
             prompt = get_batch_text_attribute_extraction_prompt(text_elements_json)
+            logger.info(f"样式识别思考预算: {thinking_budget}")
             
             # 调用 ai_service.generate_json_with_image（带重试机制）
             try:

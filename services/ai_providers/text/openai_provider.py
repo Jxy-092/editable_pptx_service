@@ -4,13 +4,17 @@ OpenAI SDK implementation for text generation
 import base64
 import mimetypes
 import logging
+import time
+import json
 from typing import Generator
 from openai import OpenAI
+from urllib.parse import urlencode
 from .base import TextProvider, strip_think_tags
 from config import get_config
 
 logger = logging.getLogger(__name__)
-
+# Responses 代理接口固定要求的查询参数。
+OPENAI_RESPONSES_EXTRA_QUERY = {"api-version": "2025-04-01-preview"}
 
 class OpenAITextProvider(TextProvider):
     """Text generation using OpenAI SDK (compatible with Gemini via proxy)"""
@@ -24,6 +28,7 @@ class OpenAITextProvider(TextProvider):
             api_base: API base URL (e.g., https://aihubmix.com/v1)
             model: Model name to use
         """
+        self.api_base = (api_base or "").rstrip("/")
         self.client = OpenAI(
             api_key=api_key,
             base_url=api_base,
@@ -32,6 +37,13 @@ class OpenAITextProvider(TextProvider):
             max_retries=get_config().OPENAI_MAX_RETRIES  # set max retries from config
         )
         self.model = model
+
+    def _build_responses_request_url(self) -> str:
+        """Build the full Responses API request URL for logging."""
+        query_string = urlencode(OPENAI_RESPONSES_EXTRA_QUERY)
+        if self.api_base:
+            return f"{self.api_base}/responses?{query_string}"
+        return f"/responses?{query_string}"
 
     def generate_text(self, prompt: str, thinking_budget: int = 0) -> str:
         """
@@ -77,11 +89,27 @@ class OpenAITextProvider(TextProvider):
         request_url = self._build_responses_request_url()
         start_time = time.perf_counter()
 
-        logger.info(
-            "Calling OpenAI Responses image understanding API: url=%s, params=%s",
-            request_url,
-            json.dumps(log_request_params, ensure_ascii=False),
-        )
+        # log_request_params = {
+        #     "model": self.model,
+        #     "input": [
+        #         {
+        #             "role": "user",
+        #             "content": [
+        #                 {"type": "input_text", "text": prompt},
+        #                 {
+        #                     "type": "input_image",
+        #                     "image_url": "data:image/png;base64,<omitted>",
+        #                 },
+        #             ],
+        #         }
+        #     ],
+        #     "extra_query": OPENAI_RESPONSES_EXTRA_QUERY,
+        # }
+        # logger.info(
+        #     "Calling OpenAI Responses image understanding API: url=%s, params=%s",
+        #     request_url,
+        #     json.dumps(log_request_params, ensure_ascii=False),
+        # )
         response = self.client.responses.create(
             model=self.model,
             input=[
@@ -97,25 +125,9 @@ class OpenAITextProvider(TextProvider):
                 }
             ],
         )
-        log_request_params = {
-            "model": self.model,
-            "input": [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "input_text", "text": prompt},
-                        {
-                            "type": "input_image",
-                            "image_url": "data:image/png;base64,<omitted>",
-                        },
-                    ],
-                }
-            ],
-            "extra_query": OPENAI_RESPONSES_EXTRA_QUERY,
-        }
-        elapsed_ms = (time.perf_counter() - start_time) * 1000
+        elapsed_ms = time.perf_counter() - start_time # 单位秒
         logger.info(
-            "OpenAI Responses image understanding API completed: url=%s, elapsed_ms=%.2f",
+            "OpenAI Responses image understanding API completed: url=%s, 耗时=%.2f",
             request_url,
             elapsed_ms,
         )

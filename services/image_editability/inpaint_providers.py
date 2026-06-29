@@ -12,6 +12,7 @@ Inpaint提供者 - 抽象不同的inpaint实现
 """
 import logging
 import tempfile
+import time
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict
 from PIL import Image
@@ -372,38 +373,55 @@ class HybridInpaintProvider(InpaintProvider):
         """
         expand_pixels = kwargs.get('expand_pixels', 2)
         enhance_quality = kwargs.get('enhance_quality', self._enhance_quality)
+
+        # 记录整个 Hybrid 背景修复流程耗时。
+        total_start_time = time.perf_counter()
+        baidu_elapsed = 0.0
+        generative_elapsed = 0.0
         
         try:
             # Step 1: 百度图像修复 - 精确去除文字
             logger.info(f"HybridInpaintProvider Step 1: 百度修复 {len(bboxes)} 个区域...")
-            
+
+            # 记录内部百度修复调用耗时。
+            baidu_start_time = time.perf_counter()
             repaired_image = self._baidu_provider.inpaint_regions(
                 image=image,
                 bboxes=bboxes,
                 types=types,
                 expand_pixels=expand_pixels
             )
-            
+
+            baidu_elapsed = time.perf_counter() - baidu_start_time
             if repaired_image is None:
                 logger.error("HybridInpaintProvider: 百度修复失败")
                 return None
             
             logger.info("HybridInpaintProvider: 百度修复完成")
+            logger.info("HybridInpaintProvider: 百度耗时=%.2fs",baidu_elapsed)
             
             # Step 2: 生成式画质提升（可选）
             if enhance_quality and self._generative_provider:
                 logger.info("HybridInpaintProvider Step 2: 生成式画质提升...")
                 
                 # 使用专门的画质提升prompt，传入被修复的区域信息
+                generative_start_time = time.perf_counter()
                 enhanced_image = self._enhance_image_quality(
                     repaired_image,
                     inpainted_bboxes=bboxes,  # 传入被修复的区域
                     aspect_ratio=kwargs.get('aspect_ratio'),
                     resolution=kwargs.get('resolution')
                 )
-                
+
+                generative_elapsed = time.perf_counter() - generative_start_time
                 if enhanced_image:
                     logger.info("HybridInpaintProvider: 画质提升完成")
+                    logger.info(
+                        "HybridInpaintProvider: 生成式背景修复/画质提升完成，"
+                        "生成式耗时=%.2fs，总耗时=%.2fs",
+                        generative_elapsed,
+                        time.perf_counter() - total_start_time,
+                        )
                     return enhanced_image
                 else:
                     logger.warning("HybridInpaintProvider: 画质提升失败，返回百度修复结果")
