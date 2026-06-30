@@ -1208,6 +1208,7 @@ class ExportService:
                     if fail_fast:
                         raise
                     failed_extractions.append((element_id, str(e)))
+        style_extract_elapsed = time.perf_counter() - style_extract_start_time
         logger.info("混合文本样式识别整体执行完成，耗时=%.2fs",style_extract_elapsed)
 
         # Step 3: 合并结果
